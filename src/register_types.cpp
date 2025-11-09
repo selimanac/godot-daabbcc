@@ -5,7 +5,7 @@
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
 
-#include "daabbcc.h"
+#include "extension.h"
 
 using namespace godot;
 
@@ -13,7 +13,7 @@ void initialize_daabbcc_types(ModuleInitializationLevel p_level) {
 	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
-	GDREGISTER_CLASS(DaabbccClass);
+	GDREGISTER_CLASS(DaabbccExtension);
 }
 
 void uninitialize_daabbcc_types(ModuleInitializationLevel p_level) {
