@@ -1,7 +1,7 @@
-#ifndef EXAMPLE_REGISTER_TYPES_H
-#define EXAMPLE_REGISTER_TYPES_H
+#ifndef REGISTER_DAABBCC_TYPES_H
+#define REGISTER_DAABBCC_TYPES_H
 
-void initialize_gdextension_types();
-void uninitialize_gdextension_types();
+void initialize_daabbcc_types();
+void uninitialize_daabbcc_types();
 
 #endif // EXAMPLE_REGISTER_TYPES_H
