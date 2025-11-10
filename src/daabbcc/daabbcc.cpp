@@ -401,6 +401,8 @@ static inline void GameobjectRebuildIterateCallback(void *, const uint8_t *key, 
 }
 
 void GameObjectUpdate() {
+	m_daabbcc.m_dynamicTreeGroup.Iterate(GameobjectRebuildIterateCallback, (void *)0x0);
+
 	// If paused or not set
 	if (!m_gameUpdate.m_updateLoopState || m_daabbcc.m_gameObjectContainer.Empty()) {
 		return;
@@ -408,22 +410,19 @@ void GameObjectUpdate() {
 
 	for (int i = 0; i < m_daabbcc.m_gameObjectContainer.Size(); ++i) {
 		m_daabbcc.m_gameObject = &m_daabbcc.m_gameObjectContainer[i];
-		godot::Node2D *node = m_daabbcc.m_gameObject->m_gameObjectInstance;
+		godot::Object *obj = godot::ObjectDB::get_instance(m_daabbcc.m_gameObject->m_instanceID);
+		godot::Node2D *node = godot::Object::cast_to<godot::Node2D>(obj);
 
-		//if (ObjectDB::get_instance(m_daabbcc.m_gameObject->m_gameObjectInstance)) {
 		if (node) {
 			m_daabbcc.m_gameObject->m_position = m_daabbcc.m_gameObject->m_getWorldPosition ? node->get_global_position() : node->get_position();
-
 		} else {
 			// It is freed
 			DAABBCC::TreeGroup *m_treeGroup = m_daabbcc.m_dynamicTreeGroup.Get(m_daabbcc.m_gameObject->m_groupID);
-
 			b2DynamicTree_DestroyProxy(&m_treeGroup->m_dynamicTree, m_daabbcc.m_gameObject->m_proxyID);
 			m_daabbcc.m_gameObjectContainer.EraseSwap(i);
 			--i;
 		}
 
-		// TODO Find a better way:
 		b2AABB m_aabb;
 		DAABBCC::TreeGroup *m_treeGroup = m_daabbcc.m_dynamicTreeGroup.Get(m_daabbcc.m_gameObject->m_groupID);
 
@@ -431,8 +430,6 @@ void GameObjectUpdate() {
 
 		b2DynamicTree_MoveProxy(&m_treeGroup->m_dynamicTree, m_daabbcc.m_gameObject->m_proxyID, m_aabb);
 	}
-
-	m_daabbcc.m_dynamicTreeGroup.Iterate(GameobjectRebuildIterateCallback, (void *)0x0);
 };
 
 ////////////////////////////////////////

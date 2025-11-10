@@ -57,7 +57,7 @@ func _ready() -> void:
 	PLAYER_aabb_id = daabbcc.insert_node2d(group_id, player, sprite_size,false, collision_bits.PLAYER)
 	print("PLAYER_aabb_id: ", PLAYER_aabb_id)
 
-	ENEMY_aabb_id = daabbcc.insert_aabb(group_id, enemy.position, sprite_size,collision_bits.ENEMY)
+	ENEMY_aabb_id = daabbcc.insert_node2d(group_id, enemy, sprite_size,false,collision_bits.ENEMY)
 	print("ENEMY_aabb_id: ", ENEMY_aabb_id)
 
 	BLOCK_aabb_id = daabbcc.insert_node2d(group_id,block,sprite_size, false, collision_bits.BLOCK)
@@ -155,6 +155,8 @@ func _ready() -> void:
 		print("ID:", ids[i])
 		print("Distance:", distances[i])
 
+	enemy.queue_free()	
+
 
 func _process(delta):
 	queue_redraw()
@@ -200,8 +202,8 @@ func _process(delta):
 
 		for i in range(ids.size()):
 			print("ID:", ids[i])
-	else:
-		print("NOPE")
+	#else:
+		#print("NOPE")
 	
 
 	

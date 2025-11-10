@@ -64,6 +64,7 @@ public:
 	// ===========================================
 	// Tree Operations
 	// ===========================================
+	void run(bool state);
 	void rebuild(uint8_t group_id, bool full_build = true);
 	void rebuild_all(bool full_build = true);
 	void reset();

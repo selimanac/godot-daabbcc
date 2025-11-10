@@ -446,6 +446,9 @@ void DaabbccExtension::on_frame_update() {
 // ===========================================
 // Tree Operations
 // ===========================================
+void DaabbccExtension::run(bool state) {
+	daabbcc::Run(state);
+}
 
 void DaabbccExtension::rebuild(uint8_t group_id, bool full_build) {
 	bool isSet = daabbcc::SetTreeGroup(group_id);
@@ -458,10 +461,13 @@ void DaabbccExtension::rebuild(uint8_t group_id, bool full_build) {
 void DaabbccExtension::rebuild_all(bool full_build) {
 	daabbcc::RebuildAll(full_build);
 }
+
 void DaabbccExtension::reset() {
 	//SceneTree *tree = Object::cast_to<SceneTree>(Engine::get_singleton()->get_main_loop());
 	if (tree)
 		tree->disconnect("process_frame", callable_mp(this, &DaabbccExtension::on_frame_update));
 
+	SceneTree *tree = nullptr;
+	m_connected = false;
 	daabbcc::Reset();
 }
