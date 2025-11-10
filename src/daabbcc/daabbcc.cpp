@@ -1,5 +1,7 @@
 #include "daabbcc/math_functions.h"
+#include "godot_cpp/classes/node2d.hpp"
 #include "godot_cpp/core/print_string.hpp"
+#include "godot_cpp/variant/vector2.hpp"
 
 //#include "dmsdk/dlib/time.h"
 //#include "dmsdk/dlib/vmath.h"
@@ -25,7 +27,7 @@ void Setup(uint8_t max_group_count, uint16_t max_gameobject_count, uint16_t max_
 	m_daabbcc.m_queryManifoldResult.SetCapacity(max_query_count);
 
 	//  Gamobject Container
-	//m_daabbcc.m_gameObjectContainer.SetCapacity(max_gameobject_count);
+	m_daabbcc.m_gameObjectContainer.SetCapacity(max_gameobject_count);
 
 	//	godot::print_verbose("Verbose ID: ", 2);
 	//godot::print_error("Erro ID: ", 2);
@@ -54,14 +56,14 @@ uint8_t AddGroup(uint8_t treeBuildType) {
 
 void RemoveGroup(uint8_t groupID) {
 	// Remove all Gameobjects
-	/*uint32_t n = m_daabbcc.m_gameObjectContainer.Size();
+	uint32_t n = m_daabbcc.m_gameObjectContainer.Size();
 	for (int i = 0; i < n; ++i) {
 		if (m_daabbcc.m_gameObjectContainer[i].m_groupID == groupID) {
 			m_daabbcc.m_gameObjectContainer.EraseSwap(i);
 			--n;
 			--i;
 		}
-	}*/
+	}
 
 	// Destroy tree
 	b2DynamicTree_Destroy(&m_daabbcc.m_treeGroup->m_dynamicTree);
@@ -95,13 +97,14 @@ int32_t AddProxy(uint8_t groupID, float x, float y, uint32_t width, uint32_t hei
 	return proxyID;
 }
 
-/*void AddGameObject(uint8_t groupID, int32_t proxyID, dmVMath::Point3 position, uint32_t width, uint32_t height, dmGameObject::HInstance gameObjectInstance, bool getWorldPosition) {
+void AddGameObject(uint8_t groupID, int32_t proxyID, godot::Vector2 position, uint32_t width, uint32_t height, godot::Node2D *gameObjectInstance, bool getWorldPosition) {
 	GameObject gameObject;
 
 	gameObject.m_groupID = groupID;
 	gameObject.m_proxyID = proxyID;
 	gameObject.m_position = position;
 	gameObject.m_gameObjectInstance = gameObjectInstance;
+	gameObject.m_instanceID = gameObjectInstance->get_instance_id();
 	gameObject.m_width = width;
 	gameObject.m_height = height;
 	gameObject.m_getWorldPosition = getWorldPosition;
@@ -111,28 +114,28 @@ int32_t AddProxy(uint8_t groupID, float x, float y, uint32_t width, uint32_t hei
 	} else {
 		m_daabbcc.m_gameObjectContainer.Push(gameObject);
 	}
-}*/
+}
 
 void MoveProxy(int32_t proxyID, float x, float y, uint32_t width, uint32_t height) {
 	Bound(&m_daabbcc.m_aabb, x, y, width, height);
 	b2DynamicTree_MoveProxy(&m_daabbcc.m_treeGroup->m_dynamicTree, proxyID, m_daabbcc.m_aabb);
 }
 
-/*void UpdateGameobjectSize(uint8_t groupID, int32_t proxyID, uint32_t width, uint32_t height) {
+void UpdateGameobjectSize(uint8_t groupID, int32_t proxyID, uint32_t width, uint32_t height) {
 	for (uint32_t i = 0; i < m_daabbcc.m_gameObjectContainer.Size(); ++i) {
 		if (m_daabbcc.m_gameObjectContainer[i].m_groupID == groupID && m_daabbcc.m_gameObjectContainer[i].m_proxyID == proxyID) {
 			m_daabbcc.m_gameObjectContainer[i].m_width = width;
 			m_daabbcc.m_gameObjectContainer[i].m_height = height;
 		}
 	}
-}*/
+}
 
 void RemoveProxy(uint8_t groupID, int32_t proxyID) {
-	/*for (uint32_t i = 0; i < m_daabbcc.m_gameObjectContainer.Size(); ++i) {
+	for (uint32_t i = 0; i < m_daabbcc.m_gameObjectContainer.Size(); ++i) {
 		if (m_daabbcc.m_gameObjectContainer[i].m_groupID == groupID && m_daabbcc.m_gameObjectContainer[i].m_proxyID == proxyID) {
 			m_daabbcc.m_gameObjectContainer.EraseSwap(i);
 		}
-	}*/
+	}
 
 	b2DynamicTree_DestroyProxy(&m_daabbcc.m_treeGroup->m_dynamicTree, proxyID);
 }
@@ -386,7 +389,7 @@ void Run(bool toggle) {
 void SetUpdateFrequency(int32_t updateFrequency) {
 	m_gameUpdate.m_updateFrequency = updateFrequency;
 };
-/*
+
 static inline void GameobjectRebuildIterateCallback(void *, const uint8_t *key, DAABBCC::TreeGroup *treeGroup) {
 	if (treeGroup->m_buildType == UPDATE_INCREMENTAL) {
 		return;
@@ -397,45 +400,41 @@ static inline void GameobjectRebuildIterateCallback(void *, const uint8_t *key, 
 	b2DynamicTree_Rebuild(&treeGroup->m_dynamicTree, fullBuild);
 }
 
-// From Defold source
-// https://github.com/defold/defold/blob/cdaa870389ca00062bfc03bcda8f4fb34e93124a/engine/engine/src/engine.cpp#L1902
 void GameObjectUpdate() {
 	// If paused or not set
 	if (!m_gameUpdate.m_updateLoopState || m_daabbcc.m_gameObjectContainer.Empty()) {
 		return;
 	}
 
-	float step_dt; // The dt for each step (the game frame)
-	uint32_t num_steps; // Number of times to loop over the StepFrame function
+	for (int i = 0; i < m_daabbcc.m_gameObjectContainer.Size(); ++i) {
+		m_daabbcc.m_gameObject = &m_daabbcc.m_gameObjectContainer[i];
+		godot::Node2D *node = m_daabbcc.m_gameObject->m_gameObjectInstance;
 
-	CalcTimeStep(step_dt, num_steps);
+		//if (ObjectDB::get_instance(m_daabbcc.m_gameObject->m_gameObjectInstance)) {
+		if (node) {
+			m_daabbcc.m_gameObject->m_position = m_daabbcc.m_gameObject->m_getWorldPosition ? node->get_global_position() : node->get_position();
 
-	for (uint32_t i = 0; i < num_steps; ++i) {
-		for (int i = 0; i < m_daabbcc.m_gameObjectContainer.Size(); ++i) {
-			m_daabbcc.m_gameObject = &m_daabbcc.m_gameObjectContainer[i];
-
-			if (m_daabbcc.m_gameObject->m_getWorldPosition) {
-				m_daabbcc.m_gameObject->m_position = dmGameObject::GetWorldPosition(m_daabbcc.m_gameObject->m_gameObjectInstance);
-			} else {
-				m_daabbcc.m_gameObject->m_position = dmGameObject::GetPosition(m_daabbcc.m_gameObject->m_gameObjectInstance);
-			}
-
-			// B2_ASSERT(aabb.upperBound.x - aabb.lowerBound.x < B2_HUGE);
-			// B2_ASSERT(aabb.upperBound.y - aabb.lowerBound.y < B2_HUGE);
-
-			// TODO Find a better way:
-			b2AABB m_aabb;
+		} else {
+			// It is freed
 			DAABBCC::TreeGroup *m_treeGroup = m_daabbcc.m_dynamicTreeGroup.Get(m_daabbcc.m_gameObject->m_groupID);
 
-			Bound(&m_aabb, m_daabbcc.m_gameObject->m_position.getX(), m_daabbcc.m_gameObject->m_position.getY(), m_daabbcc.m_gameObject->m_width, m_daabbcc.m_gameObject->m_height);
-
-			b2DynamicTree_MoveProxy(&m_treeGroup->m_dynamicTree, m_daabbcc.m_gameObject->m_proxyID, m_aabb);
+			b2DynamicTree_DestroyProxy(&m_treeGroup->m_dynamicTree, m_daabbcc.m_gameObject->m_proxyID);
+			m_daabbcc.m_gameObjectContainer.EraseSwap(i);
+			--i;
 		}
 
-		m_daabbcc.m_dynamicTreeGroup.Iterate(GameobjectRebuildIterateCallback, (void *)0x0);
+		// TODO Find a better way:
+		b2AABB m_aabb;
+		DAABBCC::TreeGroup *m_treeGroup = m_daabbcc.m_dynamicTreeGroup.Get(m_daabbcc.m_gameObject->m_groupID);
+
+		Bound(&m_aabb, m_daabbcc.m_gameObject->m_position.x, m_daabbcc.m_gameObject->m_position.y, m_daabbcc.m_gameObject->m_width, m_daabbcc.m_gameObject->m_height);
+
+		b2DynamicTree_MoveProxy(&m_treeGroup->m_dynamicTree, m_daabbcc.m_gameObject->m_proxyID, m_aabb);
 	}
+
+	m_daabbcc.m_dynamicTreeGroup.Iterate(GameobjectRebuildIterateCallback, (void *)0x0);
 };
-*/
+
 ////////////////////////////////////////
 // Tree Operations
 ////////////////////////////////////////
@@ -526,48 +525,6 @@ static inline void Bound(b2AABB *aabb, float x, float y, uint32_t width, uint32_
 	aabb->lowerBound = { x - (width / 2.0f), y - (height / 2.0f) };
 	aabb->upperBound = { x + (width / 2.0f), y + (height / 2.0f) };
 }
-/*
-// From Defold source
-// https://github.com/defold/defold/blob/cdaa870389ca00062bfc03bcda8f4fb34e93124a/engine/engine/src/engine.cpp#L1860
-static void CalcTimeStep(float &step_dt, uint32_t &num_steps) {
-	uint64_t time = dmTime::GetMonotonicTime();
-	uint64_t frame_time = time - m_gameUpdate.m_previousFrameTime;
-	m_gameUpdate.m_previousFrameTime = time;
-
-	float frame_dt = (float)(frame_time / 1000000.0);
-
-	// Never allow for large hitches
-	if (frame_dt > 0.5f) {
-		frame_dt = 0.5f;
-	}
-
-	// Variable frame rate
-	if (m_gameUpdate.m_updateFrequency == 0) {
-		step_dt = frame_dt;
-		num_steps = 1;
-		return;
-	}
-
-	// Fixed frame rate
-	float fixed_dt = 1.0f / (float)m_gameUpdate.m_updateFrequency;
-
-	// We don't allow having a higher framerate than the actual variable frame
-	// rate since the update+render is currently coupled together and also Flip()
-	// would be called more than once. E.g. if the fixed_dt == 1/120 and the
-	// frame_dt == 1/60
-	if (fixed_dt < frame_dt) {
-		fixed_dt = frame_dt;
-	}
-
-	m_gameUpdate.m_accumFrameTime += frame_dt;
-
-	float num_steps_f = m_gameUpdate.m_accumFrameTime / fixed_dt;
-
-	num_steps = (uint32_t)num_steps_f;
-	step_dt = fixed_dt;
-
-	m_gameUpdate.m_accumFrameTime = m_gameUpdate.m_accumFrameTime - num_steps * fixed_dt;
-}*/
 
 void Reset() {
 	m_daabbcc.m_dynamicTreeGroup.Iterate(RemoveGroupsIterateCallback, (void *)0x0);

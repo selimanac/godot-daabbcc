@@ -1,10 +1,13 @@
 #include "extension.h"
 #include "daabbcc.h"
 #include "godot_cpp/core/class_db.hpp"
-#include "godot_cpp/core/print_string.hpp"
+
 #include "godot_cpp/variant/array.hpp"
 #include "godot_cpp/variant/packed_float32_array.hpp"
 #include "godot_cpp/variant/packed_int32_array.hpp"
+#include "godot_cpp/variant/vector2.hpp"
+#include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/scene_tree.hpp>
 
 using namespace daabbcc;
 
@@ -33,6 +36,12 @@ void DaabbccExtension::_bind_methods() {
 	godot::ClassDB::bind_method(
 			D_METHOD("insert_aabb", "group_id", "position", "size", "category_bits"),
 			&DaabbccExtension::insert_aabb,
+			DEFVAL(CATEGORY_ALL));
+
+	godot::ClassDB::bind_method(
+			D_METHOD("insert_node2d", "group_id", "node_instance", "size", "get_world_position", "category_bits"),
+			&DaabbccExtension::insert_node2d,
+			DEFVAL(false),
 			DEFVAL(CATEGORY_ALL));
 
 	godot::ClassDB::bind_method(
@@ -113,6 +122,16 @@ void DaabbccExtension::_bind_methods() {
 }
 
 void DaabbccExtension::init(uint8_t max_group_count, uint16_t max_gameobject_count, uint16_t max_query_count) {
+	if (m_connected) {
+		ERR_FAIL_MSG("daabbcc.init():  Already initialized!");
+	}
+
+	tree = Object::cast_to<SceneTree>(Engine::get_singleton()->get_main_loop());
+	if (tree) {
+		tree->connect("process_frame", callable_mp(this, &DaabbccExtension::on_frame_update));
+		m_connected = true;
+	}
+
 	daabbcc::Setup(max_group_count, max_gameobject_count, max_query_count);
 }
 
@@ -162,6 +181,24 @@ void DaabbccExtension::remove(uint8_t group_id, int32_t proxy_id) {
 		ERR_FAIL_MSG("daabbcc.remove(): invalid group id");
 	}
 	daabbcc::RemoveProxy(group_id, proxy_id);
+}
+
+int32_t DaabbccExtension::insert_node2d(uint8_t group_id, Node2D *instance, Vector2 size, bool get_world_position, uint64_t category_bits) {
+	bool isSet = daabbcc::SetTreeGroup(group_id);
+	if (!isSet) {
+		ERR_FAIL_V_MSG(int32_t(), "daabbcc.insert_aabb(): invalid group id");
+	}
+
+	Vector2 position = instance->get_position();
+	if (get_world_position) {
+		position = instance->get_global_position();
+	}
+
+	int32_t proxyID = daabbcc::AddProxy(group_id, position.x, position.y, size.x, size.y, category_bits);
+
+	daabbcc::AddGameObject(group_id, proxyID, position, size.x, size.y, instance, get_world_position);
+
+	return proxyID;
 }
 
 // ===========================================
@@ -402,6 +439,10 @@ Array DaabbccExtension::raycast_sort(uint8_t group_id, Vector2 start_position, V
 	return result;
 }
 
+void DaabbccExtension::on_frame_update() {
+	daabbcc::GameObjectUpdate();
+}
+
 // ===========================================
 // Tree Operations
 // ===========================================
@@ -418,5 +459,9 @@ void DaabbccExtension::rebuild_all(bool full_build) {
 	daabbcc::RebuildAll(full_build);
 }
 void DaabbccExtension::reset() {
+	//SceneTree *tree = Object::cast_to<SceneTree>(Engine::get_singleton()->get_main_loop());
+	if (tree)
+		tree->disconnect("process_frame", callable_mp(this, &DaabbccExtension::on_frame_update));
+
 	daabbcc::Reset();
 }

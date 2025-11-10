@@ -14,3 +14,10 @@ config/name="godot cpp template"
 run/main_scene="uid://dh0oj81pufivs"
 config/features=PackedStringArray("4.5", "Forward Plus")
 config/icon="res://icon.svg"
+
+[input]
+
+"Left Mouse Button"={
+"deadzone": 0.2,
+"events": []
+}

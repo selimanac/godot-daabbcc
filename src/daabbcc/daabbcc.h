@@ -1,13 +1,15 @@
 #pragma once
 
 #include "daabbcc/math_functions.h"
+#include "godot_cpp/classes/node2d.hpp"
+#include "godot_cpp/variant/vector2.hpp"
 #include <daabbcc/collision.h>
 #include <daabbcc/constants.h>
 #include <daabbcc/dmarray.h>
 #include <daabbcc/dmhashtable.h>
 
 //#include <dmsdk/dlib/time.h>
-//#include <dmsdk/gameobject/gameobject.h>
+
 #include <cstdint>
 
 namespace daabbcc {
@@ -41,16 +43,17 @@ struct GameUpdate {
 	bool m_updateLoopState = true;
 	uint32_t m_loopCounter;
 };
-/*
+
 typedef struct GameObject {
 	uint8_t m_groupID;
 	int32_t m_proxyID;
-	dmVMath::Point3 m_position;
-	dmGameObject::HInstance m_gameObjectInstance;
+	godot::Vector2 m_position;
+	godot::Node2D *m_gameObjectInstance;
+	godot::ObjectID m_instanceID;
 	uint32_t m_width;
 	uint32_t m_height;
 	bool m_getWorldPosition = false;
-} GameObject;*/
+} GameObject;
 
 typedef struct Ray {
 	b2Vec2 m_startPoint;
@@ -92,8 +95,8 @@ struct DAABBCC {
 	QueryContainer m_queryContainer;
 	b2RayCastInput m_raycastInput;
 	b2CastOutput m_raycastOutput;
-	//	dmArray<GameObject> m_gameObjectContainer;
-	//	GameObject *m_gameObject;
+	dmArray<GameObject> m_gameObjectContainer;
+	GameObject *m_gameObject;
 	Ray m_ray;
 
 	// Max allocations
@@ -125,7 +128,7 @@ bool SetTreeGroup(uint8_t groupID); // THIS IS FOR INTERNAL USE ONLY
 
 int32_t AddProxy(uint8_t groupID, float x, float y, uint32_t width, uint32_t height, uint64_t categoryBits);
 
-//void AddGameObject(uint8_t groupID, int32_t proxyID, dmVMath::Point3 position, uint32_t width, uint32_t height, dmGameObject::HInstance gameObjectInstance, bool getWorldPosition);
+void AddGameObject(uint8_t groupID, int32_t proxyID, godot::Vector2 position, uint32_t width, uint32_t height, godot::Node2D *gameObjectInstance, bool getWorldPosition);
 
 void MoveProxy(int32_t proxyID, float x, float y, uint32_t width, uint32_t height);
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "godot_cpp/classes/node2d.hpp"
 #include "godot_cpp/classes/wrapped.hpp"
 #include "godot_cpp/core/binder_common.hpp"
 #include <godot_cpp/classes/object.hpp>
@@ -15,11 +16,16 @@ class DaabbccExtension : public Object {
 
 protected:
 	static const uint64_t CATEGORY_ALL;
+
+	bool m_connected = false;
 	static void _bind_methods();
 
 	static void generate_results(uint32_t queryResultSize, dmArray<uint16_t> &queryResult, Array &result);
 	static void generate_short_results(uint32_t queryResultSize, dmArray<daabbcc::ManifoldResult> &queryResult, Array &result);
 	static void generate_manifold_results(uint32_t queryResultSize, dmArray<daabbcc::ManifoldResult> &queryResult, Array &result);
+
+	void on_frame_update();
+	SceneTree *tree;
 
 public:
 	DaabbccExtension() = default;
@@ -39,6 +45,7 @@ public:
 	int32_t insert_aabb(uint8_t group_id, Vector2 position, Vector2 size, uint64_t category_bits = CATEGORY_ALL);
 	void update_aabb(uint8_t group_id, int32_t proxy_id, Vector2 position, Vector2 size);
 	void remove(uint8_t group_id, int32_t proxy_id);
+	int32_t insert_node2d(uint8_t group_id, Node2D *instance, Vector2 size, bool get_world_position = false, uint64_t category_bits = CATEGORY_ALL);
 
 	// ===========================================
 	// Query Operations
